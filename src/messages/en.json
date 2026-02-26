@@ -1,0 +1,86 @@
+{
+  "nav": {
+    "home": "Home",
+    "events": "Events",
+    "menu": "Menu",
+    "about": "About",
+    "gallery": "Gallery",
+    "contact": "Contact"
+  },
+  "hero": {
+    "title": "Muse",
+    "subtitle": "Where Art Meets Life",
+    "cta_events": "Upcoming Events",
+    "cta_reserve": "Reserve a Table"
+  },
+  "home": {
+    "events_title": "Upcoming Events",
+    "events_subtitle": "Live music every evening — piano, violin, jazz and more",
+    "events_cta": "All Events",
+    "about_title": "About Us",
+    "about_text": "Muse is a place where the soul of old Tbilisi comes alive. Grand piano, antique decor, live music and an atmosphere unlike any other.",
+    "about_cta": "Learn More"
+  },
+  "events": {
+    "title": "Events",
+    "subtitle": "Live music and special evenings at Muse",
+    "seo_title": "Events & Live Music",
+    "seo_description": "Live music and special evenings at Muse Bar Tbilisi. Piano, violin, and jazz performances every evening on Vertskhli Street.",
+    "coming_soon": "Upcoming events will be announced soon",
+    "stay_tuned": "Follow us on social media for the latest updates",
+    "weekly": "Every Evening",
+    "weekly_text": "Live piano and violin performances create an unforgettable atmosphere every night at Muse"
+  },
+  "menu": {
+    "title": "Menu",
+    "subtitle": "Cocktails, Wine & Cuisine",
+    "seo_title": "Menu — Cocktails, Wine & Cuisine",
+    "seo_description": "Signature cocktails, Georgian wine selection, and light cuisine at Muse Bar Tbilisi on Vertskhli Street.",
+    "drinks_title": "Signature Cocktails",
+    "drinks_text": "Crafted with care — our bartenders blend classic techniques with Georgian flavors",
+    "wine_title": "Georgian Wine",
+    "wine_text": "A curated selection of the finest Georgian wines, from Kakheti to Racha",
+    "food_title": "Kitchen",
+    "food_text": "Light bites and sharing plates designed to complement your evening",
+    "coming_soon": "Full menu coming soon"
+  },
+  "about": {
+    "title": "About Us",
+    "subtitle": "The Soul of Old Tbilisi",
+    "seo_title": "About Us — The Story of Muse",
+    "seo_description": "Discover Muse Bar on Vertskhli Street, Tbilisi. Antique decor, grand piano, live music, and a vintage atmosphere in the heart of the old city.",
+    "story_title": "Our Story",
+    "story_text": "Muse was born from a love for Tbilisi's timeless spirit. Nestled on Vertskhli Street, in the heart of the old city, we created a space where art, music, and hospitality intertwine.",
+    "atmosphere_title": "The Atmosphere",
+    "atmosphere_text": "Step inside and discover antique decor, a grand piano filling the air with melody, and the warm glow of vintage lighting. Every detail has been chosen to transport you to another era.",
+    "music_title": "Live Music",
+    "music_text": "Every evening, talented musicians bring Muse to life — from intimate piano solos to jazz ensembles and violin performances that echo through the halls."
+  },
+  "gallery": {
+    "title": "Gallery",
+    "subtitle": "Moments captured at Muse",
+    "seo_title": "Gallery",
+    "seo_description": "Photo gallery of Muse Bar Tbilisi — moments captured in our vintage atmosphere on Vertskhli Street.",
+    "coming_soon": "Photo gallery coming soon",
+    "follow": "Follow us on Instagram for the latest photos"
+  },
+  "contact": {
+    "title": "Contact",
+    "subtitle": "Visit us or get in touch",
+    "seo_title": "Contact & Reservations",
+    "seo_description": "Visit Muse Bar at 52 Vertskhli Street, Tbilisi. Open daily 09:00–02:00. Call +995 599 98 38 38 for reservations.",
+    "address_label": "Address",
+    "address": "52 Vertskhli Street, Tbilisi, Georgia",
+    "hours_label": "Hours",
+    "hours": "Daily 09:00 – 02:00",
+    "phone_label": "Phone",
+    "phone": "+995 599 98 38 38",
+    "reserve_title": "Reserve a Table",
+    "reserve_text": "Call us or visit to reserve your table. We recommend booking in advance for weekend evenings."
+  },
+  "footer": {
+    "address": "52 Vertskhli St, Tbilisi",
+    "hours": "Daily 09:00 – 02:00",
+    "rights": "All rights reserved"
+  }
+}
