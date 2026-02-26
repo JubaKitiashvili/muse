@@ -80,6 +80,23 @@ export default function ContactContent() {
             </FadeIn>
           </StaggerChildren>
         </section>
+
+        {/* Google Maps */}
+        <section className="pb-20 px-4 bg-[#100E0C]">
+          <FadeIn className="max-w-4xl mx-auto">
+            <iframe
+              src="https://www.google.com/maps?q=Muse+Bar+Tbilisi,+52+Vertskhli+Street&z=16&output=embed"
+              width="100%"
+              height="400"
+              style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) brightness(0.9)' }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Muse Bar Tbilisi - Google Maps"
+              className="rounded-lg"
+            />
+          </FadeIn>
+        </section>
       </main>
       <Footer />
     </>

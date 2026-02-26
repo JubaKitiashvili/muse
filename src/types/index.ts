@@ -15,6 +15,43 @@ export interface Event {
   created_at: string;
 }
 
+export interface MenuCategory {
+  id: string;
+  name_ka: string;
+  name_en: string;
+  name_ru: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface MenuItem {
+  id: string;
+  category_id: string;
+  name_ka: string;
+  name_en: string;
+  name_ru: string;
+  description_ka: string | null;
+  description_en: string | null;
+  description_ru: string | null;
+  price: number;
+  image_url: string | null;
+  is_available: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface GalleryPhoto {
+  id: string;
+  url: string;
+  caption_ka: string | null;
+  caption_en: string | null;
+  caption_ru: string | null;
+  sort_order: number;
+  is_published: boolean;
+  created_at: string;
+}
+
 export interface SiteContent {
   key: string;
   value_ka: string;

@@ -63,6 +63,53 @@ export async function generateMetadata({
   };
 }
 
+function getJsonLd(locale: string) {
+  const names: Record<string, string> = {
+    ka: 'მუზა — ბარი და კაფე',
+    en: 'Muse Bar Tbilisi',
+    ru: 'Муза Бар Тбилиси',
+  };
+  const descriptions: Record<string, string> = {
+    ka: 'მუზა — თბილისის გულში, ვერცხლის ქუჩაზე. ლაივ მუსიკა, კოქტეილები, განსაკუთრებული ატმოსფერო.',
+    en: 'Muse bar in the heart of Tbilisi. Live music every evening — piano, violin, jazz. Cocktails, coffee, vintage atmosphere.',
+    ru: 'Бар Муза в центре Тбилиси. Живая музыка каждый вечер — фортепиано, скрипка, джаз. Коктейли, кофе, атмосфера.',
+  };
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BarOrPub',
+    name: names[locale] || names.en,
+    description: descriptions[locale] || descriptions.en,
+    url: 'https://musebar.ge',
+    telephone: '+995599983838',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: '52 Vertskhli Street',
+      addressLocality: 'Tbilisi',
+      addressCountry: 'GE',
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: 41.6934,
+      longitude: 44.8076,
+    },
+    openingHoursSpecification: {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: [
+        'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+        'Friday', 'Saturday', 'Sunday',
+      ],
+      opens: '09:00',
+      closes: '02:00',
+    },
+    servesCuisine: ['Cocktails', 'Coffee', 'Bar Food'],
+    hasMenu: 'https://musebar.ge/en/menu',
+    priceRange: '$$',
+    image: 'https://musebar.ge/assets/hero.webp',
+    sameAs: [],
+  };
+}
+
 export default async function LocaleLayout({
   children,
   params,
@@ -77,9 +124,16 @@ export default async function LocaleLayout({
   }
 
   const messages = await getMessages();
+  const jsonLd = getJsonLd(locale);
 
   return (
     <html lang={locale}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body>
         <NextIntlClientProvider messages={messages}>
           {children}
