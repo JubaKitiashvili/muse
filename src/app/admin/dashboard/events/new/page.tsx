@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { compressImage } from '@/lib/compress-image';
 import { LangTabs } from '../../components/lang-tabs';
 
 export default function NewEventPage() {
@@ -53,13 +54,14 @@ export default function NewEventPage() {
     let finalImageUrl = form.image_url || null;
 
     if (imageFile) {
-      const fileExt = imageFile.name.split('.').pop();
+      const compressed = await compressImage(imageFile);
+      const fileExt = compressed.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
       const filePath = `images/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('events')
-        .upload(filePath, imageFile);
+        .upload(filePath, compressed);
 
       if (uploadError) {
         setError(uploadError.message);

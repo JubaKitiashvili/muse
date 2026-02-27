@@ -42,7 +42,11 @@
     "wine_text": "A curated selection of the finest Georgian wines, from Kakheti to Racha",
     "food_title": "Kitchen",
     "food_text": "Light bites and sharing plates designed to complement your evening",
-    "coming_soon": "Full menu coming soon"
+    "coming_soon": "Full menu coming soon",
+    "search_placeholder": "Search dishes...",
+    "search_no_results": "No results found",
+    "search_results_count": "found",
+    "close": "Close"
   },
   "about": {
     "title": "About Us",

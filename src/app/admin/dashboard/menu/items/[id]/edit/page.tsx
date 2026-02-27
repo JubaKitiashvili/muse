@@ -3,10 +3,12 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { compressImage } from '@/lib/compress-image';
 import { LangTabs } from '../../../../components/lang-tabs';
 
 interface Category {
   id: string;
+  parent_id: string | null;
   name_en: string;
   name_ka: string;
 }
@@ -20,9 +22,15 @@ export default function EditMenuItemPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [selectedMainCategory, setSelectedMainCategory] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const [hasVariants, setHasVariants] = useState(false);
+  const [variants, setVariants] = useState<
+    { name_ka: string; name_en: string; name_ru: string; price: string }[]
+  >([]);
 
   const [form, setForm] = useState({
     category_id: '',
@@ -38,19 +46,30 @@ export default function EditMenuItemPage() {
     is_available: true,
   });
 
+  const mainCategories = allCategories.filter((c) => !c.parent_id);
+  const subcategories = allCategories.filter(
+    (c) => c.parent_id === selectedMainCategory
+  );
+
   useEffect(() => {
     async function load() {
       const supabase = createClient();
 
-      const [itemRes, catRes] = await Promise.all([
+      const [itemRes, catRes, variantsRes] = await Promise.all([
         supabase.from('menu_items').select('*').eq('id', id).single(),
         supabase
           .from('menu_categories')
-          .select('id, name_en, name_ka')
+          .select('id, parent_id, name_en, name_ka')
+          .order('sort_order'),
+        supabase
+          .from('menu_item_variants')
+          .select('*')
+          .eq('item_id', id)
           .order('sort_order'),
       ]);
 
-      setCategories(catRes.data ?? []);
+      const cats = catRes.data ?? [];
+      setAllCategories(cats);
 
       if (itemRes.error || !itemRes.data) {
         setError('პროდუქტი ვერ მოიძებნა');
@@ -59,6 +78,27 @@ export default function EditMenuItemPage() {
       }
 
       const d = itemRes.data;
+      const existingVariants = variantsRes.data ?? [];
+
+      // Derive main category from the item's subcategory
+      const subcat = cats.find((c) => c.id === d.category_id);
+      if (subcat?.parent_id) {
+        setSelectedMainCategory(subcat.parent_id);
+      }
+
+      // Populate variant state from existing data
+      if (existingVariants.length > 0) {
+        setHasVariants(true);
+        setVariants(
+          existingVariants.map((v) => ({
+            name_ka: v.name_ka ?? '',
+            name_en: v.name_en ?? '',
+            name_ru: v.name_ru ?? '',
+            price: String(v.price ?? ''),
+          }))
+        );
+      }
+
       setForm({
         category_id: d.category_id ?? '',
         name_ka: d.name_ka ?? '',
@@ -104,13 +144,14 @@ export default function EditMenuItemPage() {
     let finalImageUrl = form.image_url || null;
 
     if (imageFile) {
-      const fileExt = imageFile.name.split('.').pop();
+      const compressed = await compressImage(imageFile);
+      const fileExt = compressed.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
       const filePath = `images/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('menu')
-        .upload(filePath, imageFile);
+        .upload(filePath, compressed);
 
       if (uploadError) {
         setError(uploadError.message);
@@ -129,7 +170,7 @@ export default function EditMenuItemPage() {
       .from('menu_items')
       .update({
         ...form,
-        price: parseFloat(form.price) || 0,
+        price: hasVariants ? 0 : parseFloat(form.price) || 0,
         image_url: finalImageUrl,
         description_ka: form.description_ka || null,
         description_en: form.description_en || null,
@@ -141,6 +182,28 @@ export default function EditMenuItemPage() {
       setError(updateError.message);
       setSaving(false);
       return;
+    }
+
+    // Delete old variants and insert new ones
+    await supabase.from('menu_item_variants').delete().eq('item_id', id);
+
+    if (hasVariants && variants.length > 0) {
+      const variantRows = variants.map((v, i) => ({
+        item_id: id,
+        name_ka: v.name_ka,
+        name_en: v.name_en || '',
+        name_ru: v.name_ru || '',
+        price: parseFloat(v.price) || 0,
+        sort_order: i,
+      }));
+      const { error: varError } = await supabase
+        .from('menu_item_variants')
+        .insert(variantRows);
+      if (varError) {
+        setError(varError.message);
+        setSaving(false);
+        return;
+      }
     }
 
     router.push('/admin/dashboard/menu');
@@ -166,23 +229,49 @@ export default function EditMenuItemPage() {
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-[#F5ECD7]/80 mb-2">
-            კატეგორია
-          </label>
-          <select
-            required
-            value={form.category_id}
-            onChange={(e) => updateField('category_id', e.target.value)}
-            className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#333] rounded-lg text-white focus:outline-none focus:border-[#C9A84C] transition-colors"
-          >
-            <option value="">აირჩიეთ კატეგორია</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name_en || cat.name_ka}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-[#F5ECD7]/80 mb-2">
+              მთავარი კატეგორია
+            </label>
+            <select
+              required
+              value={selectedMainCategory}
+              onChange={(e) => {
+                setSelectedMainCategory(e.target.value);
+                updateField('category_id', '');
+              }}
+              className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#333] rounded-lg text-white focus:outline-none focus:border-[#C9A84C] transition-colors"
+            >
+              <option value="">აირჩიეთ</option>
+              {mainCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name_ka || cat.name_en}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#F5ECD7]/80 mb-2">
+              ქვეკატეგორია
+            </label>
+            <select
+              required
+              value={form.category_id}
+              onChange={(e) => updateField('category_id', e.target.value)}
+              disabled={!selectedMainCategory}
+              className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#333] rounded-lg text-white focus:outline-none focus:border-[#C9A84C] transition-colors disabled:opacity-40"
+            >
+              <option value="">
+                {selectedMainCategory ? 'აირჩიეთ' : 'ჯერ აირჩიეთ კატეგორია'}
               </option>
-            ))}
-          </select>
+              {subcategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name_ka || cat.name_en}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <LangTabs>
@@ -218,34 +307,170 @@ export default function EditMenuItemPage() {
           )}
         </LangTabs>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-[#F5ECD7]/80 mb-2">
-              ფასი (&#8382;)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              required
-              value={form.price}
-              onChange={(e) => updateField('price', e.target.value)}
-              className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#333] rounded-lg text-white focus:outline-none focus:border-[#C9A84C] transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#F5ECD7]/80 mb-2">
-              რიგითობა
-            </label>
-            <input
-              type="number"
-              value={form.sort_order}
-              onChange={(e) =>
-                updateField('sort_order', parseInt(e.target.value) || 0)
-              }
-              className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#333] rounded-lg text-white focus:outline-none focus:border-[#C9A84C] transition-colors"
-            />
-          </div>
+        {/* Variants toggle */}
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="has_variants"
+            checked={hasVariants}
+            onChange={(e) => setHasVariants(e.target.checked)}
+            className="w-4 h-4 accent-[#C9A84C]"
+          />
+          <label htmlFor="has_variants" className="text-sm text-[#F5ECD7]/80">
+            ვარიანტებით (მაგ. სხვადასხვა ზომა/ტიპი სხვადასხვა ფასით)
+          </label>
         </div>
+
+        {!hasVariants ? (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[#F5ECD7]/80 mb-2">
+                ფასი (&#8382;)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                required
+                value={form.price}
+                onChange={(e) => updateField('price', e.target.value)}
+                className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#333] rounded-lg text-white focus:outline-none focus:border-[#C9A84C] transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#F5ECD7]/80 mb-2">
+                რიგითობა
+              </label>
+              <input
+                type="number"
+                value={form.sort_order}
+                onChange={(e) =>
+                  updateField('sort_order', parseInt(e.target.value) || 0)
+                }
+                className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#333] rounded-lg text-white focus:outline-none focus:border-[#C9A84C] transition-colors"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-[#F5ECD7]/80">
+                ვარიანტები
+              </label>
+              <button
+                type="button"
+                onClick={() =>
+                  setVariants((prev) => [
+                    ...prev,
+                    { name_ka: '', name_en: '', name_ru: '', price: '' },
+                  ])
+                }
+                className="text-xs text-[#C9A84C] hover:text-[#C9A84C]/80 transition-colors cursor-pointer"
+              >
+                + ვარიანტის დამატება
+              </button>
+            </div>
+
+            {variants.length === 0 && (
+              <p className="text-xs text-[#F5ECD7]/30 text-center py-4 border border-dashed border-[#333] rounded-lg">
+                დაამატეთ მინიმუმ ერთი ვარიანტი
+              </p>
+            )}
+
+            {variants.map((v, idx) => (
+              <div
+                key={idx}
+                className="border border-[#333] rounded-lg p-4 space-y-3 relative"
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setVariants((prev) => prev.filter((_, i) => i !== idx))
+                  }
+                  className="absolute top-2 right-2 text-red-400/60 hover:text-red-400 transition-colors cursor-pointer"
+                  aria-label="ვარიანტის წაშლა"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <input
+                    type="text"
+                    placeholder="სახელი (KA)"
+                    value={v.name_ka}
+                    onChange={(e) =>
+                      setVariants((prev) =>
+                        prev.map((item, i) =>
+                          i === idx ? { ...item, name_ka: e.target.value } : item
+                        )
+                      )
+                    }
+                    className="px-3 py-2 bg-[#1A1A1A] border border-[#333] rounded-lg text-white text-sm focus:outline-none focus:border-[#C9A84C] transition-colors"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Name (EN)"
+                    value={v.name_en}
+                    onChange={(e) =>
+                      setVariants((prev) =>
+                        prev.map((item, i) =>
+                          i === idx ? { ...item, name_en: e.target.value } : item
+                        )
+                      )
+                    }
+                    className="px-3 py-2 bg-[#1A1A1A] border border-[#333] rounded-lg text-white text-sm focus:outline-none focus:border-[#C9A84C] transition-colors"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Название (RU)"
+                    value={v.name_ru}
+                    onChange={(e) =>
+                      setVariants((prev) =>
+                        prev.map((item, i) =>
+                          i === idx ? { ...item, name_ru: e.target.value } : item
+                        )
+                      )
+                    }
+                    className="px-3 py-2 bg-[#1A1A1A] border border-[#333] rounded-lg text-white text-sm focus:outline-none focus:border-[#C9A84C] transition-colors"
+                  />
+                </div>
+                <div className="w-32">
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="ფასი ₾"
+                    value={v.price}
+                    onChange={(e) =>
+                      setVariants((prev) =>
+                        prev.map((item, i) =>
+                          i === idx ? { ...item, price: e.target.value } : item
+                        )
+                      )
+                    }
+                    className="w-full px-3 py-2 bg-[#1A1A1A] border border-[#333] rounded-lg text-white text-sm focus:outline-none focus:border-[#C9A84C] transition-colors"
+                  />
+                </div>
+              </div>
+            ))}
+
+            {/* Sort order when variants enabled */}
+            <div className="w-1/2">
+              <label className="block text-sm font-medium text-[#F5ECD7]/80 mb-2">
+                რიგითობა
+              </label>
+              <input
+                type="number"
+                value={form.sort_order}
+                onChange={(e) =>
+                  updateField('sort_order', parseInt(e.target.value) || 0)
+                }
+                className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#333] rounded-lg text-white focus:outline-none focus:border-[#C9A84C] transition-colors"
+              />
+            </div>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-[#F5ECD7]/80 mb-2">

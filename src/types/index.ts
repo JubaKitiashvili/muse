@@ -17,11 +17,24 @@ export interface Event {
 
 export interface MenuCategory {
   id: string;
+  parent_id: string | null;
   name_ka: string;
   name_en: string;
   name_ru: string;
+  image_url: string | null;
   sort_order: number;
   is_active: boolean;
+  created_at: string;
+}
+
+export interface MenuItemVariant {
+  id: string;
+  item_id: string;
+  name_ka: string;
+  name_en: string;
+  name_ru: string;
+  price: number;
+  sort_order: number;
   created_at: string;
 }
 
@@ -39,6 +52,7 @@ export interface MenuItem {
   is_available: boolean;
   sort_order: number;
   created_at: string;
+  variants?: MenuItemVariant[];
 }
 
 export interface GalleryPhoto {

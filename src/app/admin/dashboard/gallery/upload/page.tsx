@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { compressImage } from '@/lib/compress-image';
 
 export default function UploadPhotoPage() {
   const router = useRouter();
@@ -43,9 +44,10 @@ export default function UploadPhotoPage() {
     const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
     const filePath = `photos/${fileName}`;
 
+    const compressed = await compressImage(file);
     const { error: uploadError } = await supabase.storage
       .from('gallery')
-      .upload(filePath, file);
+      .upload(filePath, compressed);
 
     if (uploadError) {
       setError(uploadError.message);
